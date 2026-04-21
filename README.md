@@ -28,6 +28,12 @@ pnpm dev
 
 En développement, le middleware CF Access est désactivé. La page affiche `MOCK_OPERATOR_EMAIL` (défaut : `dev@local`).
 
+### Sécurité JWT CF Access
+
+Le JWT CF Access est décodé côté server component **uniquement pour afficher l'email opérateur** (`app/page.tsx`). La validation de signature est faite au niveau **edge Cloudflare Access** — le JWT ne peut pas atteindre l'origin sans être signé par CF Access si le tunnel/WARP est correctement configuré.
+
+⚠️ **Pour défense-en-profondeur en prod :** configure `CF_ACCESS_TEAM_DOMAIN` dans `.env` et passe l'option à `authLayer({ provider: 'cfAccess', cfAccessTeamDomain: process.env.CF_ACCESS_TEAM_DOMAIN })` dans `middleware.ts` — cela activera la vérification JWKS côté app aussi.
+
 ## Stack
 
 | Couche | Techno |

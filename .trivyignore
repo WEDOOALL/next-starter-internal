@@ -1,0 +1,4 @@
+# Trivy ignore file — allowlist for known/accepted CVEs
+# Format: one CVE ID per line. Comment with context.
+# Example:
+# CVE-2024-12345  # upstream pending fix, exposure minimal in our context

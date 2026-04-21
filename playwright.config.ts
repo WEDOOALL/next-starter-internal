@@ -22,6 +22,8 @@ export default defineConfig({
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env['CI'],
     env: {
+      // Dev mode triggers auth-layer bypass in middleware.ts (CF Access skipped locally)
+      NODE_ENV: 'development',
       // Mock operator email for E2E tests (dev mode — no real CF Access)
       MOCK_OPERATOR_EMAIL: 'e2e-test@wedooall.com',
     },
