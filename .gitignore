@@ -1,0 +1,29 @@
+# deps
+node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+
+# env
+.env.local
+.env.*.local
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+pnpm-debug.log*
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
