@@ -1,0 +1,51 @@
+# Supabase CLI config — for `supabase` CLI commands (db push, gen types, etc.)
+# https://supabase.com/docs/guides/cli/config
+#
+# This template targets the WEDOOALL self-hosted instance at
+# https://supabase-internal.wedooall.com (cf. ADR-001).
+# Each app has a dedicated Postgres schema (project_id below = schema name).
+
+project_id = "wedooall-app"
+
+[db]
+# Local Postgres for `supabase start` — only for offline dev; production uses
+# the shared self-hosted instance.
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+enabled = false
+
+[api]
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public"]
+max_rows = 1000
+
+[studio]
+enabled = false
+# We use the shared Studio at supabase-internal.wedooall.com for production
+# inspection. Local studio disabled to avoid port conflicts.
+
+[inbucket]
+enabled = false
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+# CF Access is used in front of internal apps — Supabase Auth is here for
+# RLS contexts only (uid, jwt claims). Disable signup flows by default.
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000"]
+jwt_expiry = 3600
+enable_signup = false
+
+[edge_runtime]
+enabled = true
+
+[analytics]
+enabled = false

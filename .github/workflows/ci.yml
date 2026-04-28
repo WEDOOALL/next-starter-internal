@@ -11,6 +11,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # Quality — lint, typecheck, unit tests, build
+  # ───────────────────────────────────────────────────────────────────────────
   quality:
     name: Lint + Typecheck + Test + Build
     runs-on: ubuntu-latest
@@ -30,13 +33,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
           cache: pnpm
 
-      - name: Configure @wedooall registry
+      - name: Configure registries (@wedooall + @aceternity)
         run: |
           echo "@wedooall:registry=https://registry.wedooall.com" >> .npmrc
           echo "//registry.wedooall.com/:_authToken=${{ secrets.WEDOOALL_NPM_TOKEN }}" >> .npmrc
+          if [ -n "${{ secrets.ACETERNITY_LICENSE }}" ]; then
+            echo "@aceternity:registry=https://ui.aceternity.com/registry" >> .npmrc
+            echo "//ui.aceternity.com/:_authToken=${{ secrets.ACETERNITY_LICENSE }}" >> .npmrc
+          fi
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -54,9 +61,14 @@ jobs:
         run: pnpm build
         env:
           DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+          NEXT_PUBLIC_SUPABASE_URL: https://dummy.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJdummy
 
+  # ───────────────────────────────────────────────────────────────────────────
+  # Security — Trivy filesystem + secrets scan + npm audit
+  # ───────────────────────────────────────────────────────────────────────────
   security:
-    name: Security scan
+    name: Security scan (Trivy)
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -67,8 +79,133 @@ jobs:
       - name: Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.35.0
         with:
-          scan-type: 'fs'
-          format: 'table'
-          exit-code: '1'
+          scan-type: "fs"
+          format: "table"
+          exit-code: "1"
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: "CRITICAL,HIGH"
+
+  gitleaks:
+    name: Secrets scan (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  audit:
+    name: pnpm audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Audit
+        run: pnpm audit --audit-level=high
+        continue-on-error: false
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Quality Gates Web — Lighthouse + axe-core
+  # ───────────────────────────────────────────────────────────────────────────
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [quality]
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: pnpm
+
+      - name: Configure registries
+        run: |
+          echo "@wedooall:registry=https://registry.wedooall.com" >> .npmrc
+          echo "//registry.wedooall.com/:_authToken=${{ secrets.WEDOOALL_NPM_TOKEN }}" >> .npmrc
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+        env:
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+          NEXT_PUBLIC_SUPABASE_URL: https://dummy.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJdummy
+
+      - name: Run Lighthouse CI
+        run: pnpm lighthouse
+        continue-on-error: true
+        # PR feedback only — does not block merge while we calibrate baselines.
+        # Flip to `false` once perf/a11y budgets are stable per app.
+
+  a11y:
+    name: Accessibility (axe-core via Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [quality]
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: pnpm
+
+      - name: Configure registries
+        run: |
+          echo "@wedooall:registry=https://registry.wedooall.com" >> .npmrc
+          echo "//registry.wedooall.com/:_authToken=${{ secrets.WEDOOALL_NPM_TOKEN }}" >> .npmrc
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run a11y e2e
+        run: pnpm test:e2e
+        env:
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+          NEXT_PUBLIC_SUPABASE_URL: https://dummy.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJdummy

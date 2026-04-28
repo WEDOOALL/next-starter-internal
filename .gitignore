@@ -7,8 +7,12 @@ node_modules/
 out/
 
 # env
+.env
 .env.local
 .env.*.local
+
+# npm
+.npmrc
 
 # misc
 .DS_Store
@@ -27,3 +31,20 @@ pnpm-debug.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Husky internals (the executable hooks themselves are committed)
+.husky/_/
+
+# Lighthouse CI
+.lighthouseci/
+
+# Supabase CLI generated artifacts
+supabase/.branches/
+supabase/.temp/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db

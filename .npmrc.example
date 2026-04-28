@@ -1,0 +1,17 @@
+# =============================================================================
+# .npmrc TEMPLATE — copy to `.npmrc` (gitignored) and adjust as needed.
+# =============================================================================
+# Template is self-contained — all deps come from npmjs.org by default.
+# No private @wedooall registry required as of v0.2.0 (helpers inlined in
+# `lib/middleware/` and `lib/observability/`).
+
+# Aceternity Pro registry — for shadcn-style premium components.
+# License token is set as a user env var on Emmanuel's machine: ACETERNITY_LICENSE
+# (provisioned by C:\00- config REPO\setup-repo-premium.ps1)
+@aceternity:registry=https://ui.aceternity.com/registry
+//ui.aceternity.com/:_authToken=${ACETERNITY_LICENSE}
+
+# pnpm hoist pattern — avoid unhoisted issues with @types/*, eslint, prettier
+public-hoist-pattern[]=*types*
+public-hoist-pattern[]=*eslint*
+public-hoist-pattern[]=*prettier*

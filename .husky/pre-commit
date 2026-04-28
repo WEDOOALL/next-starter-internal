@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+# Husky v9 pre-commit hook — runs lint-staged on staged files only.
+# Light by design: prettier + eslint --fix on changed .ts/.tsx/.md/.json,
+# no typecheck (too slow for a commit-time hook — kept for CI).
+#
+# To bypass in emergency : git commit --no-verify
+pnpm lint-staged

@@ -1,1 +1,1 @@
-export { register } from '@wedooall/observability';
+export { register } from "@/lib/observability";

@@ -1,1 +1,80 @@
 @import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   STELLA Design System — WEDOOALL
+   Reference : Design wedooall.md (tokens-source-of-truth)
+   Approach  : CSS-first Tailwind v4 — `@theme` block exposes design tokens as
+   custom properties + Tailwind utility classes (e.g. `bg-bg-panel`, `text-accent`).
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* ─── Couleurs (dark-only par défaut, identitaire WEDOOALL) ────────────── */
+  --color-bg-marketing: #08090a;       /* fond pages marketing/landing */
+  --color-bg-panel: #0f1011;           /* fond conteneurs principaux */
+  --color-bg-elevated: #191a1b;        /* fond cartes/modals */
+  --color-bg-hover: #232425;           /* hover state */
+
+  --color-border-subtle: #1f2123;      /* bordures discrètes */
+  --color-border-strong: #2a2d30;      /* bordures cartes */
+
+  --color-text-primary: #f7f8f8;       /* JAMAIS pur blanc — réduit fatigue */
+  --color-text-secondary: #9ea1a3;
+  --color-text-tertiary: #62666a;
+  --color-text-disabled: #45494d;
+
+  --color-accent: #5e6ad2;             /* indigo signature WEDOOALL */
+  --color-accent-hover: #7170ff;
+  --color-accent-fg: #ffffff;          /* texte sur fond accent */
+
+  --color-success: #4cb782;
+  --color-warning: #f7b955;
+  --color-danger: #e35b5b;
+
+  /* ─── Typographie (Inter Variable + Geist Mono) ────────────────────────── */
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "Cascadia Code", monospace;
+
+  /* ─── Radius (smooth, pas de coins durs) ───────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* ─── Spacing scale custom (extension de Tailwind) ─────────────────────── */
+  --spacing-section: 5rem;             /* 80px — gap entre sections */
+}
+
+/* ─── Body defaults ────────────────────────────────────────────────────────── */
+html {
+  background-color: var(--color-bg-marketing);
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-bg-marketing);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-weight: 510;                   /* poids signature Stella (entre 500/600) */
+  font-feature-settings: "cv01", "cv11", "ss03";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ─── Code monospace ───────────────────────────────────────────────────────── */
+code, pre, kbd, samp {
+  font-family: var(--font-mono);
+  font-feature-settings: "ss01", "ss02", "ss03";
+}
+
+/* ─── Selection ────────────────────────────────────────────────────────────── */
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-accent-fg);
+}
+
+/* ─── Scrollbar (Webkit) ───────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--color-bg-marketing); }
+::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-tertiary); }
