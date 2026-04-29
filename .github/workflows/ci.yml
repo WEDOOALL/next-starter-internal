@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,10 +26,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # IMPORTANT: do NOT pass `with: version: ...` here — it conflicts with the
+      # `packageManager` field in package.json (ERR_PNPM_BAD_PM_VERSION).
+      # pnpm/action-setup@v4 reads packageManager automatically.
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -36,14 +38,15 @@ jobs:
           node-version-file: ".nvmrc"
           cache: pnpm
 
-      - name: Configure registries (@wedooall + @aceternity)
+      # Aceternity UI Pro registry (private, premium components).
+      # ACETERNITY_LICENSE secret must be set at repo or org level.
+      - name: Configure Aceternity registry
+        if: env.ACETERNITY_LICENSE != ''
+        env:
+          ACETERNITY_LICENSE: ${{ secrets.ACETERNITY_LICENSE }}
         run: |
-          echo "@wedooall:registry=https://registry.wedooall.com" >> .npmrc
-          echo "//registry.wedooall.com/:_authToken=${{ secrets.WEDOOALL_NPM_TOKEN }}" >> .npmrc
-          if [ -n "${{ secrets.ACETERNITY_LICENSE }}" ]; then
-            echo "@aceternity:registry=https://ui.aceternity.com/registry" >> .npmrc
-            echo "//ui.aceternity.com/:_authToken=${{ secrets.ACETERNITY_LICENSE }}" >> .npmrc
-          fi
+          echo "@aceternity:registry=https://ui.aceternity.com/registry" >> .npmrc
+          echo "//ui.aceternity.com/:_authToken=${ACETERNITY_LICENSE}" >> .npmrc
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -65,7 +68,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJdummy
 
   # ───────────────────────────────────────────────────────────────────────────
-  # Security — Trivy filesystem + secrets scan + npm audit
+  # Security — Trivy filesystem scan
   # ───────────────────────────────────────────────────────────────────────────
   security:
     name: Security scan (Trivy)
@@ -85,8 +88,13 @@ jobs:
           ignore-unfixed: true
           severity: "CRITICAL,HIGH"
 
-  gitleaks:
-    name: Secrets scan (gitleaks)
+  # ───────────────────────────────────────────────────────────────────────────
+  # Secrets scan — TruffleHog (OSS, gratuit, ~700 secret types)
+  # gitleaks-action@v2 a basculé en payant pour les organizations en 2023 →
+  # remplacé par TruffleHog qui est l'option OSS de référence.
+  # ───────────────────────────────────────────────────────────────────────────
+  secrets-scan:
+    name: Secrets scan (TruffleHog)
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -96,11 +104,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ""
+          head: ${{ github.ref_name }}
+          extra_args: --only-verified
 
+  # ───────────────────────────────────────────────────────────────────────────
+  # pnpm audit — bloque sur HIGH/CRITICAL CVE
+  # ───────────────────────────────────────────────────────────────────────────
   audit:
     name: pnpm audit
     runs-on: ubuntu-latest
@@ -112,8 +126,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -125,7 +137,7 @@ jobs:
         continue-on-error: false
 
   # ───────────────────────────────────────────────────────────────────────────
-  # Quality Gates Web — Lighthouse + axe-core
+  # Quality Gates Web — Lighthouse + axe-core (PR-only, informatif)
   # ───────────────────────────────────────────────────────────────────────────
   lighthouse:
     name: Lighthouse CI
@@ -140,8 +152,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -149,10 +159,13 @@ jobs:
           node-version-file: ".nvmrc"
           cache: pnpm
 
-      - name: Configure registries
+      - name: Configure Aceternity registry
+        if: env.ACETERNITY_LICENSE != ''
+        env:
+          ACETERNITY_LICENSE: ${{ secrets.ACETERNITY_LICENSE }}
         run: |
-          echo "@wedooall:registry=https://registry.wedooall.com" >> .npmrc
-          echo "//registry.wedooall.com/:_authToken=${{ secrets.WEDOOALL_NPM_TOKEN }}" >> .npmrc
+          echo "@aceternity:registry=https://ui.aceternity.com/registry" >> .npmrc
+          echo "//ui.aceternity.com/:_authToken=${ACETERNITY_LICENSE}" >> .npmrc
 
       - name: Install
         run: pnpm install --frozen-lockfile
@@ -183,8 +196,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -192,10 +203,13 @@ jobs:
           node-version-file: ".nvmrc"
           cache: pnpm
 
-      - name: Configure registries
+      - name: Configure Aceternity registry
+        if: env.ACETERNITY_LICENSE != ''
+        env:
+          ACETERNITY_LICENSE: ${{ secrets.ACETERNITY_LICENSE }}
         run: |
-          echo "@wedooall:registry=https://registry.wedooall.com" >> .npmrc
-          echo "//registry.wedooall.com/:_authToken=${{ secrets.WEDOOALL_NPM_TOKEN }}" >> .npmrc
+          echo "@aceternity:registry=https://ui.aceternity.com/registry" >> .npmrc
+          echo "//ui.aceternity.com/:_authToken=${ACETERNITY_LICENSE}" >> .npmrc
 
       - name: Install
         run: pnpm install --frozen-lockfile
